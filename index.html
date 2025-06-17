@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Organic Blob Shape Generator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.15);
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+            font-size: 2.5rem;
+            font-weight: 700;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            margin-bottom: 40px;
+        }
+
+        .preview-section {
+            text-align: center;
+        }
+
+        .blob-preview {
+            width: 300px;
+            height: 300px;
+            margin: 0 auto 30px;
+            background: url('https://images.unsplash.com/photo-1506905925346-21bda4d32df4?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80') center/cover;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .blob-preview::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(45deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1));
+            pointer-events: none;
+        }
+
+        .controls-section {
+            background: #f8fafc;
+            padding: 25px;
+            border-radius: 15px;
+        }
+
+        .control-group {
+            margin-bottom: 20px;
+        }
+
+        .control-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #374151;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            height: 8px;
+            border-radius: 4px;
+            background: #e5e7eb;
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #667eea;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        input[type="range"]::-webkit-slider-thumb:hover {
+            background: #5a67d8;
+            transform: scale(1.1);
+        }
+
+        .value-display {
+            display: inline-block;
+            background: #667eea;
+            color: white;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            margin-left: 10px;
+        }
+
+        .preset-buttons {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .preset-btn {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 12px 16px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .preset-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .code-output {
+            background: #1a202c;
+            color: #e2e8f0;
+            padding: 20px;
+            border-radius: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            line-height: 1.6;
+            overflow-x: auto;
+            margin-top: 20px;
+        }
+
+        .code-title {
+            color: #68d391;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .copy-btn {
+            background: #48bb78;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            margin-top: 10px;
+            transition: all 0.2s ease;
+        }
+
+        .copy-btn:hover {
+            background: #38a169;
+        }
+
+        .gallery {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 20px;
+            margin-top: 40px;
+        }
+
+        .gallery-item {
+            width: 150px;
+            height: 150px;
+            background: url('https://images.unsplash.com/photo-1506905925346-21bda4d32df4?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=300&q=80') center/cover;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 3px solid transparent;
+        }
+
+        .gallery-item:hover {
+            transform: scale(1.05);
+            border-color: #667eea;
+        }
+
+        .animate-checkbox {
+            margin-top: 20px;
+        }
+
+        .animate-checkbox input {
+            margin-right: 8px;
+        }
+
+        @keyframes morph {
+            0% { border-radius: var(--shape-1); }
+            25% { border-radius: var(--shape-2); }
+            50% { border-radius: var(--shape-3); }
+            75% { border-radius: var(--shape-4); }
+            100% { border-radius: var(--shape-1); }
+        }
+
+        .animated {
+            animation: morph 4s ease-in-out infinite;
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+            
+            .blob-preview {
+                width: 250px;
+                height: 250px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎨 Organic Blob Shape Generator</h1>
+        
+        <div class="main-content">
+            <div class="preview-section">
+                <div class="blob-preview" id="blobPreview"></div>
+                <div class="animate-checkbox">
+                    <label>
+                        <input type="checkbox" id="animateCheckbox"> 
+                        <strong>Animate Shape</strong>
+                    </label>
+                </div>
+            </div>
+
+            <div class="controls-section">
+                <h3 style="margin-bottom: 20px; color: #374151;">Shape Controls</h3>
+                
+                <div class="preset-buttons">
+                    <button class="preset-btn" onclick="applyPreset('organic')">Organic</button>
+                    <button class="preset-btn" onclick="applyPreset('blob')">Blob</button>
+                    <button class="preset-btn" onclick="applyPreset('smooth')">Smooth</button>
+                    <button class="preset-btn" onclick="applyPreset('random')">Random</button>
+                </div>
+
+                <div class="control-group">
+                    <label>Top Left X: <span class="value-display" id="tlx-value">60</span>%</label>
+                    <input type="range" id="tlx" min="20" max="80" value="60" oninput="updateShape()">
+                </div>
+
+                <div class="control-group">
+                    <label>Top Left Y: <span class="value-display" id="tly-value">40</span>%</label>
+                    <input type="range" id="tly" min="20" max="80" value="40" oninput="updateShape()">
+                </div>
+
+                <div class="control-group">
+                    <label>Top Right X: <span class="value-display" id="trx-value">40</span>%</label>
+                    <input type="range" id="trx" min="20" max="80" value="40" oninput="updateShape()">
+                </div>
+
+                <div class="control-group">
+                    <label>Top Right Y: <span class="value-display" id="try-value">60</span>%</label>
+                    <input type="range" id="try" min="20" max="80" value="60" oninput="updateShape()">
+                </div>
+
+                <div class="control-group">
+                    <label>Bottom Right X: <span class="value-display" id="brx-value">40</span>%</label>
+                    <input type="range" id="brx" min="20" max="80" value="40" oninput="updateShape()">
+                </div>
+
+                <div class="control-group">
+                    <label>Bottom Right Y: <span class="value-display" id="bry-value">60</span>%</label>
+                    <input type="range" id="bry" min="20" max="80" value="60" oninput="updateShape()">
+                </div>
+
+                <div class="control-group">
+                    <label>Bottom Left X: <span class="value-display" id="blx-value">60</span>%</label>
+                    <input type="range" id="blx" min="20" max="80" value="60" oninput="updateShape()">
+                </div>
+
+                <div class="control-group">
+                    <label>Bottom Left Y: <span class="value-display" id="bly-value">40</span>%</label>
+                    <input type="range" id="bly" min="20" max="80" value="40" oninput="updateShape()">
+                </div>
+            </div>
+        </div>
+
+        <div class="code-output">
+            <div class="code-title">Generated CSS:</div>
+            <pre id="cssOutput">border-radius: 60% 40% 40% 60% / 40% 60% 60% 40%;</pre>
+            <button class="copy-btn" onclick="copyCSS()">📋 Copy CSS</button>
+        </div>
+
+        <h3 style="margin-top: 40px; margin-bottom: 20px; text-align: center; color: #374151;">
+            🖼️ Shape Gallery (Click to Apply)
+        </h3>
+        <div class="gallery" id="gallery"></div>
+    </div>
+
+    <script>
+        const blobPreview = document.getElementById('blobPreview');
+        const cssOutput = document.getElementById('cssOutput');
+        const animateCheckbox = document.getElementById('animateCheckbox');
+
+        // Gallery shapes
+        const galleryShapes = [
+            { name: 'Organic 1', css: '65% 35% 35% 65% / 35% 65% 65% 35%' },
+            { name: 'Blob 1', css: '30% 70% 70% 30% / 30% 30% 70% 70%' },
+            { name: 'Smooth 1', css: '40% 60% 60% 40% / 60% 40% 60% 40%' },
+            { name: 'Wavy', css: '80% 20% 50% 50% / 50% 50% 20% 80%' },
+            { name: 'Organic 2', css: '55% 45% 75% 25% / 35% 75% 45% 55%' },
+            { name: 'Blob 2', css: '25% 75% 60% 40% / 70% 30% 80% 20%' },
+            { name: 'Fluid', css: '70% 30% 45% 55% / 25% 75% 55% 45%' },
+            { name: 'Natural', css: '45% 55% 30% 70% / 65% 35% 40% 60%' }
+        ];
+
+        function updateShape() {
+            const controls = ['tlx', 'tly', 'trx', 'try', 'brx', 'bry', 'blx', 'bly'];
+            const values = {};
+            
+            controls.forEach(control => {
+                const element = document.getElementById(control);
+                const valueDisplay = document.getElementById(control + '-value');
+                values[control] = element.value;
+                valueDisplay.textContent = element.value;
+            });
+
+            const borderRadius = `${values.tlx}% ${values.trx}% ${values.brx}% ${values.blx}% / ${values.tly}% ${values.try}% ${values.bry}% ${values.bly}%`;
+            
+            blobPreview.style.borderRadius = borderRadius;
+            cssOutput.textContent = `border-radius: ${borderRadius};`;
+            
+            // Update CSS custom properties for animation
+            blobPreview.style.setProperty('--shape-1', borderRadius);
+        }
+
+        function applyPreset(type) {
+            let values;
+            
+            switch(type) {
+                case 'organic':
+                    values = {tlx: 65, tly: 35, trx: 35, try: 65, brx: 35, bry: 65, blx: 65, bly: 35};
+                    break;
+                case 'blob':
+                    values = {tlx: 30, tly: 30, trx: 70, try: 30, brx: 70, bry: 70, blx: 30, bly: 70};
+                    break;
+                case 'smooth':
+                    values = {tlx: 40, tly: 60, trx: 60, try: 40, brx: 60, bry: 40, blx: 40, bly: 60};
+                    break;
+                case 'random':
+                    values = {
+                        tlx: Math.floor(Math.random() * 40) + 30,
+                        tly: Math.floor(Math.random() * 40) + 30,
+                        trx: Math.floor(Math.random() * 40) + 30,
+                        try: Math.floor(Math.random() * 40) + 30,
+                        brx: Math.floor(Math.random() * 40) + 30,
+                        bry: Math.floor(Math.random() * 40) + 30,
+                        blx: Math.floor(Math.random() * 40) + 30,
+                        bly: Math.floor(Math.random() * 40) + 30
+                    };
+                    break;
+            }
+            
+            Object.keys(values).forEach(key => {
+                document.getElementById(key).value = values[key];
+            });
+            
+            updateShape();
+        }
+
+        function copyCSS() {
+            const css = cssOutput.textContent;
+            navigator.clipboard.writeText(css).then(() => {
+                const btn = event.target;
+                const originalText = btn.textContent;
+                btn.textContent = '✅ Copied!';
+                btn.style.background = '#38a169';
+                setTimeout(() => {
+                    btn.textContent = originalText;
+                    btn.style.background = '#48bb78';
+                }, 2000);
+            });
+        }
+
+        function createGallery() {
+            const gallery = document.getElementById('gallery');
+            
+            galleryShapes.forEach((shape, index) => {
+                const item = document.createElement('div');
+                item.className = 'gallery-item';
+                item.style.borderRadius = shape.css;
+                item.title = shape.name;
+                item.onclick = () => applyShapeFromGallery(shape.css);
+                gallery.appendChild(item);
+            });
+        }
+
+        function applyShapeFromGallery(css) {
+            // Parse the CSS and apply to controls
+            const parts = css.split(' / ');
+            const horizontal = parts[0].split(' ').map(v => parseInt(v));
+            const vertical = parts[1].split(' ').map(v => parseInt(v));
+            
+            const controls = ['tlx', 'trx', 'brx', 'blx', 'tly', 'try', 'bry', 'bly'];
+            const values = [...horizontal, ...vertical];
+            
+            controls.forEach((control, index) => {
+                document.getElementById(control).value = values[index];
+            });
+            
+            updateShape();
+        }
+
+        // Animation toggle
+        animateCheckbox.addEventListener('change', function() {
+            if (this.checked) {
+                // Generate random shapes for animation
+                const shapes = [];
+                for (let i = 0; i < 4; i++) {
+                    const shape = `${Math.floor(Math.random() * 40) + 30}% ${Math.floor(Math.random() * 40) + 30}% ${Math.floor(Math.random() * 40) + 30}% ${Math.floor(Math.random() * 40) + 30}% / ${Math.floor(Math.random() * 40) + 30}% ${Math.floor(Math.random() * 40) + 30}% ${Math.floor(Math.random() * 40) + 30}% ${Math.floor(Math.random() * 40) + 30}%`;
+                    shapes.push(shape);
+                    blobPreview.style.setProperty(`--shape-${i + 1}`, shape);
+                }
+                blobPreview.classList.add('animated');
+            } else {
+                blobPreview.classList.remove('animated');
+            }
+        });
+
+        // Initialize
+        updateShape();
+        createGallery();
+    </script>
+</body>
+</html>
