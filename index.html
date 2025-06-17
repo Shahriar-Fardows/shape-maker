@@ -163,6 +163,37 @@
             margin-bottom: 10px;
         }
 
+        .code-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .code-tab {
+            background: #2d3748;
+            color: #a0aec0;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: all 0.2s ease;
+            font-family: 'Courier New', monospace;
+        }
+
+        .code-tab.active {
+            background: #667eea;
+            color: white;
+        }
+
+        .code-tab:hover {
+            background: #4a5568;
+        }
+
+        .code-tab.active:hover {
+            background: #5a67d8;
+        }
+
         .copy-btn {
             background: #48bb78;
             color: white;
@@ -173,10 +204,19 @@
             font-size: 12px;
             margin-top: 10px;
             transition: all 0.2s ease;
+            position: relative;
         }
 
         .copy-btn:hover {
             background: #38a169;
+        }
+
+        .copy-btn.copied {
+            background: #38a169;
+        }
+
+        .copy-btn.copied::after {
+            content: ' ✅';
         }
 
         .gallery {
@@ -300,9 +340,42 @@
         </div>
 
         <div class="code-output">
-            <div class="code-title">Generated CSS:</div>
-            <pre id="cssOutput">border-radius: 60% 40% 40% 60% / 40% 60% 60% 40%;</pre>
-            <button class="copy-btn" onclick="copyCSS()">📋 Copy CSS</button>
+            <div class="code-title">Generated Code:</div>
+            <div class="code-tabs">
+                <button class="code-tab active" onclick="switchTab('css')">CSS</button>
+                <button class="code-tab" onclick="switchTab('tailwind')">Tailwind</button>
+                <button class="code-tab" onclick="switchTab('animation')">Animation CSS</button>
+            </div>
+            <div id="cssTab" class="code-content">
+                <pre id="cssOutput">border-radius: 60% 40% 40% 60% / 40% 60% 60% 40%;</pre>
+            </div>
+            <div id="tailwindTab" class="code-content" style="display: none;">
+                <pre id="tailwindOutput">/* Tailwind doesn't support complex border-radius values directly.
+Use arbitrary values: */
+<span style="color: #fbbf24;">rounded-[60%_40%_40%_60%/40%_60%_60%_40%]</span>
+
+/* Or use custom CSS with @apply: */
+<span style="color: #34d399;">@layer components {
+  .blob-shape {
+    border-radius: 60% 40% 40% 60% / 40% 60% 60% 40%;
+  }
+}</span></pre>
+            </div>
+            <div id="animationTab" class="code-content" style="display: none;">
+                <pre id="animationOutput">/* Animation CSS */
+<span style="color: #fbbf24;">@keyframes morph {
+  0% { border-radius: 60% 40% 40% 60% / 40% 60% 60% 40%; }
+  25% { border-radius: 45% 55% 30% 70% / 65% 35% 40% 60%; }
+  50% { border-radius: 70% 30% 45% 55% / 25% 75% 55% 45%; }
+  75% { border-radius: 35% 65% 75% 25% / 55% 45% 35% 65%; }
+  100% { border-radius: 60% 40% 40% 60% / 40% 60% 60% 40%; }
+}</span>
+
+<span style="color: #34d399;">.animated-blob {
+  animation: morph 4s ease-in-out infinite;
+}</span></pre>
+            </div>
+            <button class="copy-btn" onclick="copyCurrentCode()">📋 Copy Code</button>
         </div>
 
         <h3 style="margin-top: 40px; margin-bottom: 20px; text-align: center; color: #374151;">
@@ -314,7 +387,12 @@
     <script>
         const blobPreview = document.getElementById('blobPreview');
         const cssOutput = document.getElementById('cssOutput');
+        const tailwindOutput = document.getElementById('tailwindOutput');
+        const animationOutput = document.getElementById('animationOutput');
         const animateCheckbox = document.getElementById('animateCheckbox');
+        
+        let currentTab = 'css';
+        let animationShapes = [];
 
         // Gallery shapes
         const galleryShapes = [
@@ -327,6 +405,17 @@
             { name: 'Fluid', css: '70% 30% 45% 55% / 25% 75% 55% 45%' },
             { name: 'Natural', css: '45% 55% 30% 70% / 65% 35% 40% 60%' }
         ];
+
+        function switchTab(tab) {
+            // Remove active class from all tabs
+            document.querySelectorAll('.code-tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.code-content').forEach(c => c.style.display = 'none');
+            
+            // Add active class to clicked tab
+            event.target.classList.add('active');
+            document.getElementById(tab + 'Tab').style.display = 'block';
+            currentTab = tab;
+        }
 
         function updateShape() {
             const controls = ['tlx', 'tly', 'trx', 'try', 'brx', 'bry', 'blx', 'bly'];
@@ -342,10 +431,73 @@
             const borderRadius = `${values.tlx}% ${values.trx}% ${values.brx}% ${values.blx}% / ${values.tly}% ${values.try}% ${values.bry}% ${values.bly}%`;
             
             blobPreview.style.borderRadius = borderRadius;
+            
+            // Update CSS output
             cssOutput.textContent = `border-radius: ${borderRadius};`;
+            
+            // Update Tailwind output
+            tailwindOutput.innerHTML = `/* Tailwind doesn't support complex border-radius values directly.
+Use arbitrary values: */
+<span style="color: #fbbf24;">rounded-[${borderRadius.replace(/\s/g, '_')}]</span>
+
+/* Or use custom CSS with @apply: */
+<span style="color: #34d399;">@layer components {
+  .blob-shape {
+    border-radius: ${borderRadius};
+  }
+}</span>`;
+            
+            // Update animation shapes if animation is enabled
+            if (animateCheckbox.checked) {
+                updateAnimationCode();
+            }
             
             // Update CSS custom properties for animation
             blobPreview.style.setProperty('--shape-1', borderRadius);
+        }
+
+        function updateAnimationCode() {
+            const currentShape = cssOutput.textContent.replace('border-radius: ', '').replace(';', '');
+            
+            // Generate 3 additional random shapes for animation
+            const shapes = [currentShape];
+            for (let i = 0; i < 3; i++) {
+                const shape = generateRandomShape();
+                shapes.push(shape);
+            }
+            
+            animationShapes = shapes;
+            
+            const animationCSS = `/* Animation CSS */
+<span style="color: #fbbf24;">@keyframes morph {
+  0% { border-radius: ${shapes[0]}; }
+  25% { border-radius: ${shapes[1]}; }
+  50% { border-radius: ${shapes[2]}; }
+  75% { border-radius: ${shapes[3]}; }
+  100% { border-radius: ${shapes[0]}; }
+}</span>
+
+<span style="color: #34d399;">.animated-blob {
+  animation: morph 4s ease-in-out infinite;
+}</span>
+
+<span style="color: #a0aec0;">/* HTML */
+&lt;div class="animated-blob"&gt;&lt;/div&gt;</span>`;
+            
+            animationOutput.innerHTML = animationCSS;
+            
+            // Set CSS custom properties for animation
+            shapes.forEach((shape, index) => {
+                blobPreview.style.setProperty(`--shape-${index + 1}`, shape);
+            });
+        }
+
+        function generateRandomShape() {
+            const values = [];
+            for (let i = 0; i < 8; i++) {
+                values.push(Math.floor(Math.random() * 40) + 30);
+            }
+            return `${values[0]}% ${values[1]}% ${values[2]}% ${values[3]}% / ${values[4]}% ${values[5]}% ${values[6]}% ${values[7]}%`;
         }
 
         function applyPreset(type) {
